@@ -8,7 +8,8 @@ import {
     LogOut,
     ChevronRight,
     Package,
-    Ticket
+    Ticket,
+    Users
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
@@ -19,8 +20,11 @@ export function Sidebar() {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/login', { replace: true });
     };
+
+    const displayName = user ? `${user.first_name} ${user.last_name}` : 'User';
+    const initials = user ? user.first_name.charAt(0).toUpperCase() : 'U';
 
     return (
         <aside className="sidebar">
@@ -29,7 +33,7 @@ export function Sidebar() {
                     <div className="logo-icon-container">
                         <Building2 size={24} />
                     </div>
-                    <span className="logo-text">OffyBox</span>
+                    <span className="logo-text">Offybox</span>
                 </div>
             </div>
 
@@ -52,6 +56,11 @@ export function Sidebar() {
                 <NavLink to="/tickets" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <Ticket size={20} className="nav-icon" />
                     <span className="nav-label">Tickets</span>
+                </NavLink>
+
+                <NavLink to="/users" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <Users size={20} className="nav-icon" />
+                    <span className="nav-label">Users</span>
                 </NavLink>
 
                 <div className="nav-separator">Locations</div>
@@ -82,10 +91,10 @@ export function Sidebar() {
             <div className="sidebar-footer">
                 <div className="user-info">
                     <div className="user-avatar">
-                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                        {initials}
                     </div>
                     <div className="user-details">
-                        <span className="user-name">{user?.name || 'User'}</span>
+                        <span className="user-name">{displayName}</span>
                         <span className="user-email">{user?.email || ''}</span>
                     </div>
                 </div>

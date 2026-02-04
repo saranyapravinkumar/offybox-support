@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { TenantListPage } from './pages/TenantListPage';
 import { TenantCreatePage } from './pages/TenantCreatePage';
@@ -16,6 +18,9 @@ import { ModuleListPage } from './pages/ModuleListPage';
 import { ModuleCreatePage } from './pages/ModuleCreatePage';
 import { TicketListPage } from './pages/TicketListPage';
 import { TicketCreatePage } from './pages/TicketCreatePage';
+import { UserListPage } from './pages/UserListPage';
+import { UserCreatePage } from './pages/UserCreatePage';
+import { DebugRegistrationPage } from './pages/DebugRegistrationPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
 import './App.css';
@@ -49,6 +54,30 @@ function App() {
           element={
             <PublicRoute>
               <LoginPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <RegisterPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPasswordPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/debug-register"
+          element={
+            <PublicRoute>
+              <DebugRegistrationPage />
             </PublicRoute>
           }
         />
@@ -91,6 +120,10 @@ function App() {
           <Route path="/tickets" element={<TicketListPage />} />
           <Route path="/tickets/create" element={<TicketCreatePage />} />
           <Route path="/tickets/:id/edit" element={<TicketCreatePage />} />
+
+          {/* User Routes */}
+          <Route path="/users" element={<UserListPage />} />
+          <Route path="/users/create" element={<UserCreatePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
