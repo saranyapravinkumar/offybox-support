@@ -42,7 +42,7 @@ export function DashboardPage() {
             <div className="content-header">
                 <div>
                     <h1>Dashboard</h1>
-                    <p>Welcome back, {user?.name || 'User'}!</p>
+                    <p>Welcome back, {user?.first_name || 'User'}!</p>
                 </div>
             </div>
 
