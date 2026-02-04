@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { locationApi } from '../services/locationApi';
 
 export interface Country {
     id: string;
@@ -38,12 +39,16 @@ interface LocationState {
     states: State[];
     cities: City[];
     areas: Area[];
-    addCountry: (country: Omit<Country, 'id'>) => void;
-    updateCountry: (id: string, updates: Partial<Country>) => void;
-    deleteCountry: (id: string) => void;
-    addState: (state: Omit<State, 'id'>) => void;
-    updateState: (id: string, updates: Partial<State>) => void;
-    deleteState: (id: string) => void;
+    isLoading: boolean;
+    error: string | null;
+    fetchCountries: () => Promise<void>;
+    addCountry: (country: Omit<Country, 'id'>) => Promise<void>;
+    updateCountry: (id: string, updates: Partial<Country>) => Promise<void>;
+    deleteCountry: (id: string) => Promise<void>;
+    fetchStates: () => Promise<void>;
+    addState: (state: Omit<State, 'id'>) => Promise<void>;
+    updateState: (id: string, updates: Partial<State>) => Promise<void>;
+    deleteState: (id: string) => Promise<void>;
     addCity: (city: Omit<City, 'id'>) => void;
     updateCity: (id: string, updates: Partial<City>) => void;
     deleteCity: (id: string) => void;
@@ -55,17 +60,8 @@ interface LocationState {
 export const useLocationStore = create<LocationState>()(
     persist(
         (set) => ({
-            countries: [
-                { id: '1', name: 'United States', code: 'US', status: 'active' },
-                { id: '2', name: 'India', code: 'IN', status: 'active' },
-                { id: '3', name: 'United Kingdom', code: 'UK', status: 'active' },
-            ],
-            states: [
-                { id: '1', name: 'California', countryId: '1', countryName: 'United States', status: 'active' },
-                { id: '2', name: 'Texas', countryId: '1', countryName: 'United States', status: 'active' },
-                { id: '3', name: 'Maharashtra', countryId: '2', countryName: 'India', status: 'active' },
-                { id: '4', name: 'Karnataka', countryId: '2', countryName: 'India', status: 'active' },
-            ],
+            countries: [],
+            states: [],
             cities: [
                 { id: '1', name: 'Los Angeles', stateId: '1', stateName: 'California', status: 'active' },
                 { id: '2', name: 'San Francisco', stateId: '1', stateName: 'California', status: 'active' },
@@ -77,30 +73,98 @@ export const useLocationStore = create<LocationState>()(
                 { id: '2', name: 'Bandra', cityId: '3', cityName: 'Mumbai', pincode: '400050', status: 'active' },
                 { id: '3', name: 'Koramangala', cityId: '4', cityName: 'Bangalore', pincode: '560034', status: 'active' },
             ],
-            addCountry: (country) =>
-                set((state) => ({
-                    countries: [...state.countries, { ...country, id: Date.now().toString() }],
-                })),
-            updateCountry: (id, updates) =>
-                set((state) => ({
-                    countries: state.countries.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-                })),
-            deleteCountry: (id) =>
-                set((state) => ({
-                    countries: state.countries.filter((c) => c.id !== id),
-                })),
-            addState: (s) =>
-                set((state) => ({
-                    states: [...state.states, { ...s, id: Date.now().toString() }],
-                })),
-            updateState: (id, updates) =>
-                set((state) => ({
-                    states: state.states.map((s) => (s.id === id ? { ...s, ...updates } : s)),
-                })),
-            deleteState: (id) =>
-                set((state) => ({
-                    states: state.states.filter((s) => s.id !== id),
-                })),
+            isLoading: false,
+            error: null,
+            fetchCountries: async () => {
+                set({ isLoading: true, error: null });
+                try {
+                    const countries = await locationApi.fetchCountries();
+                    set({ countries, isLoading: false });
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+            addCountry: async (country) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const newCountry = await locationApi.createCountry(country);
+                    set((state) => ({
+                        countries: [...state.countries, newCountry],
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+            updateCountry: async (id, updates) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const updatedCountry = await locationApi.updateCountry(id, updates);
+                    set((state) => ({
+                        countries: state.countries.map((c) => (c.id === id ? updatedCountry : c)),
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+            deleteCountry: async (id) => {
+                set({ isLoading: true, error: null });
+                try {
+                    await locationApi.deleteCountry(id);
+                    set((state) => ({
+                        countries: state.countries.filter((c) => c.id !== id),
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+            fetchStates: async () => {
+                set({ isLoading: true, error: null });
+                try {
+                    const states = await locationApi.fetchStates();
+                    set({ states, isLoading: false });
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+            addState: async (state) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const newState = await locationApi.createState(state);
+                    set((s) => ({
+                        states: [...s.states, newState],
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+            updateState: async (id, updates) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const updatedState = await locationApi.updateState(id, updates);
+                    set((s) => ({
+                        states: s.states.map((state) => (state.id === id ? updatedState : state)),
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
+            deleteState: async (id) => {
+                set({ isLoading: true, error: null });
+                try {
+                    await locationApi.deleteState(id);
+                    set((s) => ({
+                        states: s.states.filter((state) => state.id !== id),
+                        isLoading: false
+                    }));
+                } catch (error) {
+                    set({ error: (error as Error).message, isLoading: false });
+                }
+            },
             addCity: (city) =>
                 set((state) => ({
                     cities: [...state.cities, { ...city, id: Date.now().toString() }],

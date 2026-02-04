@@ -12,6 +12,8 @@ export function CountryCreatePage() {
 
     const [formData, setFormData] = useState({ name: '', code: '', status: 'active' as 'active' | 'inactive' });
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiError, setApiError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isEditMode && id) {
@@ -21,7 +23,7 @@ export function CountryCreatePage() {
         }
     }, [id, isEditMode, countries, navigate]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors: Record<string, string> = {};
         if (!formData.name.trim()) newErrors.name = 'Name is required';
@@ -29,9 +31,20 @@ export function CountryCreatePage() {
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) return;
 
-        if (isEditMode && id) updateCountry(id, formData);
-        else addCountry(formData);
-        navigate('/countries');
+        setIsLoading(true);
+        setApiError(null);
+        try {
+            if (isEditMode && id) {
+                await updateCountry(id, formData);
+            } else {
+                await addCountry(formData);
+            }
+            navigate('/countries');
+        } catch (error) {
+            setApiError((error as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -42,6 +55,7 @@ export function CountryCreatePage() {
                     <h1>{isEditMode ? 'Edit Country' : 'Add Country'}</h1>
                 </div>
             </div>
+            {apiError && <div className="error-message" style={{ marginTop: '1rem' }}>{apiError}</div>}
             <form onSubmit={handleSubmit} className="form-container">
                 <div className="form-group">
                     <label>Country Name *</label>
@@ -61,8 +75,8 @@ export function CountryCreatePage() {
                     </select>
                 </div>
                 <div className="form-actions">
-                    <button type="button" onClick={() => navigate('/countries')} className="secondary-button">Cancel</button>
-                    <button type="submit" className="primary-button">{isEditMode ? 'Update' : 'Create'}</button>
+                    <button type="button" onClick={() => navigate('/countries')} className="secondary-button" disabled={isLoading}>Cancel</button>
+                    <button type="submit" className="primary-button" disabled={isLoading}>{isLoading ? 'Saving...' : (isEditMode ? 'Update' : 'Create')}</button>
                 </div>
             </form>
         </div>
