@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
-import { User, Mail, Phone, Calendar, ShieldCheck, UserMinus, Plus } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Edit, UserMinus, Plus } from 'lucide-react';
 
 export function UserListPage() {
     const { users, isLoading, error, fetchUsers } = useUserStore();
@@ -56,9 +56,21 @@ export function UserListPage() {
                             {users.map((user) => (
                                 <tr key={user.id}>
                                     <td>
-                                        <div className="user-info-cell">
-                                            <div className="user-avatar-small">
-                                                {user.first_name?.charAt(0) || 'U'}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{
+                                                width: '32px',
+                                                height: '32px',
+                                                borderRadius: '50%',
+                                                backgroundColor: 'var(--primary-color)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 'bold',
+                                                flexShrink: 0
+                                            }}>
+                                                {(user.first_name?.charAt(0) || 'U')}{(user.last_name?.charAt(0) || '')}
                                             </div>
                                             <div>
                                                 <div className="tenant-name">{user.first_name || 'New'} {user.last_name || 'User'}</div>
@@ -91,9 +103,9 @@ export function UserListPage() {
                                     </td>
                                     <td>
                                         <div className="actions-cell" style={{ justifyContent: 'flex-end' }}>
-                                            <button className="action-button edit" title="Edit Permissions">
-                                                <ShieldCheck size={16} />
-                                            </button>
+                                            <Link to={`/users/${user.id}/edit`} className="action-button edit" title="Edit User" style={{ textDecoration: 'none' }}>
+                                                <Edit size={16} />
+                                            </Link>
                                             <button className="action-button delete" title="Disable User">
                                                 <UserMinus size={16} />
                                             </button>

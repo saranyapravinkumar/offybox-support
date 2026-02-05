@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 import { useAuthStore } from '../store/authStore';
-import { ArrowLeft, User, Mail, Phone, Lock, Save, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export function UserCreatePage() {
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
+    const isEditMode = !!id;
+
     const addUser = useUserStore((state) => state.addUser);
+    const updateUser = useUserStore((state) => state.updateUser);
+    const fetchUsers = useUserStore((state) => state.fetchUsers);
+    const users = useUserStore((state) => state.users);
     const isLoading = useUserStore((state) => state.isLoading);
     const error = useUserStore((state) => state.error);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const token = useAuthStore((state) => state.token);
 
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         first_name: '',
         last_name: '',
@@ -30,6 +37,36 @@ export function UserCreatePage() {
         }
     }, [isAuthenticated, token, navigate]);
 
+    // Fetch users if in edit mode and list is empty
+    useEffect(() => {
+        if (isEditMode && users.length === 0) {
+            console.log('📋 Edit mode but no users loaded, fetching users list...');
+            fetchUsers();
+        }
+    }, [isEditMode, users.length, fetchUsers]);
+
+    // Load user data from the users list when in edit mode
+    useEffect(() => {
+        if (isEditMode && id && users.length > 0) {
+            console.log('📝 Edit mode detected, finding user with ID:', id);
+            const currentUser = users.find(u => u.id === id);
+
+            if (currentUser) {
+                console.log('✅ Found user, populating form:', currentUser);
+                setFormData({
+                    first_name: currentUser.first_name || '',
+                    last_name: currentUser.last_name || '',
+                    email: currentUser.email || '',
+                    phone: currentUser.phone || '',
+                    password: '', // Never populate password for security
+                    status: currentUser.status || 'ACTIVE'
+                });
+            } else {
+                console.warn('⚠️ User not found in list, ID:', id);
+            }
+        }
+    }, [isEditMode, id, users]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -40,7 +77,15 @@ export function UserCreatePage() {
             return;
         }
 
-        const success = await addUser(formData);
+        let success = false;
+        if (isEditMode && id) {
+            console.log('🔄 Updating user:', id);
+            success = await updateUser(id, formData);
+        } else {
+            console.log('➕ Creating new user');
+            success = await addUser(formData);
+        }
+
         if (success) {
             navigate('/users');
         }
@@ -71,8 +116,8 @@ export function UserCreatePage() {
                         <ArrowLeft size={24} />
                     </Link>
                     <div>
-                        <h1>Add Support User</h1>
-                        <p>Create a new account for a support team member.</p>
+                        <h1>{isEditMode ? 'Edit Support User' : 'Add Support User'}</h1>
+                        <p>{isEditMode ? 'Update support team member information.' : 'Create a new account for a support team member.'}</p>
                     </div>
                 </div>
             </div>
@@ -89,81 +134,94 @@ export function UserCreatePage() {
                     <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div className="form-group">
                             <label htmlFor="first_name">First Name</label>
-                            <div className="input-wrapper">
-                                <User className="input-icon" size={18} />
-                                <input
-                                    type="text"
-                                    id="first_name"
-                                    name="first_name"
-                                    value={formData.first_name}
-                                    onChange={handleChange}
-                                    placeholder="John"
-                                    required
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                id="first_name"
+                                name="first_name"
+                                value={formData.first_name}
+                                onChange={handleChange}
+                                placeholder="John"
+                                required
+                                className="premium-input"
+                            />
                         </div>
                         <div className="form-group">
                             <label htmlFor="last_name">Last Name</label>
-                            <div className="input-wrapper">
-                                <User className="input-icon" size={18} />
-                                <input
-                                    type="text"
-                                    id="last_name"
-                                    name="last_name"
-                                    value={formData.last_name}
-                                    onChange={handleChange}
-                                    placeholder="Doe"
-                                    required
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                id="last_name"
+                                name="last_name"
+                                value={formData.last_name}
+                                onChange={handleChange}
+                                placeholder="Doe"
+                                required
+                                className="premium-input"
+                            />
                         </div>
                     </div>
 
                     <div className="form-group">
                         <label htmlFor="email">Email Address</label>
-                        <div className="input-wrapper">
-                            <Mail className="input-icon" size={18} />
-                            <input
-                                type="email"
-                                id="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="john.doe@loadmin.com"
-                                required
-                            />
-                        </div>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="john.doe@loadmin.com"
+                            required
+                            className="premium-input"
+                        />
                     </div>
 
                     <div className="form-group">
                         <label htmlFor="phone">Phone Number</label>
-                        <div className="input-wrapper">
-                            <Phone className="input-icon" size={18} />
-                            <input
-                                type="tel"
-                                id="phone"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                placeholder="+1 (555) 000-0000"
-                                required
-                            />
-                        </div>
+                        <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            placeholder="+1 (555) 000-0000"
+                            required
+                            className="premium-input"
+                        />
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <div className="input-wrapper">
-                            <Lock className="input-icon" size={18} />
+                        <label htmlFor="password">{isEditMode ? 'New Password (leave blank to keep current)' : 'Password'}</label>
+                        <div style={{ position: 'relative' }}>
                             <input
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 id="password"
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="••••••••"
-                                required
+                                required={!isEditMode}
+                                className="premium-input"
+                                style={{ paddingRight: '45px' }}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#64748b'
+                                }}
+                            >
+                                {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                            </button>
                         </div>
                     </div>
 
@@ -187,9 +245,9 @@ export function UserCreatePage() {
                         </Link>
                         <button type="submit" className="primary-button" disabled={isLoading}>
                             {isLoading ? (
-                                <><Loader2 className="animate-spin" size={18} /> Saving...</>
+                                <><Loader2 className="animate-spin" size={18} /> {isEditMode ? 'Updating...' : 'Saving...'}</>
                             ) : (
-                                <><Save size={18} /> Save User</>
+                                <><Save size={18} /> {isEditMode ? 'Update User' : 'Save User'}</>
                             )}
                         </button>
                     </div>

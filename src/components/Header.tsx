@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { User, Bell, Search, LogOut } from 'lucide-react';
+import { Bell, Search, LogOut } from 'lucide-react';
 
 export function Header() {
     const user = useAuthStore((state) => state.user);
